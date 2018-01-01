@@ -38,6 +38,18 @@ export const VGAPalette = [{"r":0,"g":0,"b":0},{"r":0,"g":0,"b":170},{"r":0,"g":
 
 export let ShiftTable = [];
 
+// Sets palette data directly
+export function PaletteSet(index, r, g, b) {
+    VGAPalette[index] = {
+        r, g, b
+    };
+}
+
+// Sets palette shift directly
+export function ShiftSet(index, val) {
+    ShiftTable[index] = val;
+}
+
 // Performs a cyclic shift to the right
 export function PaletteShiftRight(entry, shift, range) {
     ShiftTable[entry] = ((ShiftTable[entry] + shift) % range)%256;
