@@ -38,12 +38,26 @@ export class Vec4 {
         return new Vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
     }
 
+    add(b) {
+        return new Vec4(this.x + b.x, this.y + b.y, this.z + b.z, this.w + b.w);
+    }
+
     static subv(a, b) {
         return new Vec4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
     }
 
+    sub(b) {
+        return new Vec4(this.x - b.x, this.y - b.y, this.z - b.z, this.w - b.w);
+    }
+
+    
+
     static muls(v, s) {
         return new Vec4(a.x * s, a.y * s, a.z * s, a.w * s);
+    }
+
+    mul(b) {
+        return new Vec4(this.x * b, this.y * b, this.z * b, this.w * b);
     }
 
     static lerp(a, b, t) {
@@ -110,31 +124,26 @@ export class Mat4 {
     }
 
     static ROTATION(x, y, z, angle) {
-        let sin = Math.sin(angle);
-        let cos = Math.cos(angle);
+        let rx = new Mat4();
+        let ry = new Mat4();
+        let rz = new Mat4();
 
-        let m = [
-            [0.0,       0.0,        0.0,        0.0],
-            [0.0,       0.0,        0.0,        0.0],
-            [0.0,       0.0,        0.0,        0.0],
-            [0.0,       0.0,        0.0,        0.0]
-        ];
+        rz.m[0][0] = Math.cos(z); rz.m[0][1] = -Math.sin(z); rz.m[0][2] = 0.0; rz.m[0][3] = 0.0;
+        rz.m[1][0] = Math.sin(z); rz.m[1][1] = Math.cos(z); rz.m[1][2] = 0.0; rz.m[1][3] = 0.0;
+        rz.m[2][0] = 0.0; rz.m[2][1] = 0.0; rz.m[2][2] = 1.0; rz.m[2][3] = 0.0;
+        rz.m[3][0] = 0.0; rz.m[3][1] = 0.0; rz.m[3][2] = 0.0; rz.m[3][3] = 1.0;
 
-        m[0][0] = cos + x * x * (1 - cos);
-        m[0][1] = x * y * (1 - cos) - z * sin;
-        m[0][2] = x * z * (1 - cos) + y * sin;
+        rx.m[0][0] = 1.0; rx.m[0][1] = 0.0; rx.m[0][2] = 0.0; rx.m[0][3] = 0.0; 
+        rx.m[1][0] = 0.0; rx.m[1][1] = Math.cos(x); rx.m[1][2] = -Math.sin(x); rx.m[1][3] = 0.0; 
+        rx.m[2][0] = 0.0; rx.m[2][1] = Math.sin(x); rx.m[2][2] = Math.cos(x); rx.m[2][3] = 0.0; 
+        rx.m[3][0] = 0.0; rx.m[3][1] = 0.0; rx.m[3][2] = 0.0; rx.m[3][3] = 1.0; 
 
-        m[1][0] = y * x * (1 - cos) + z * sin;
-        m[1][1] = cos + y * y * (1 - cos);
-        m[1][2] = y * z * (1 - cos) - x * sin;
+        ry.m[0][0] = Math.cos(y); ry.m[0][1] = 0.0; ry.m[0][2] = -Math.sin(y); ry.m[0][3] = 0.0; 
+        ry.m[1][0] = 0.0; ry.m[1][1] = 1.0; ry.m[1][2] = 0.0; ry.m[1][3] = 0.0; 
+        ry.m[2][0] = Math.sin(y); ry.m[2][1] = 0.0; ry.m[2][2] = Math.cos(y); ry.m[2][3] = 0.0; 
+        ry.m[3][0] = 0.0; ry.m[3][1] = 0.0; ry.m[3][2] = 0.0; ry.m[3][3] = 1.0; 
 
-        m[2][0] = z * x * (1 - cos) - y * sin;
-        m[2][1] = z * y * (1 - cos) + x * sin;
-        m[2][2] = cos + z * z * (1 - cos);
-
-        m[3][3] = 1.0;
-
-        return new Mat4(m);
+        return Mat4.mul(rz, Mat4.mul(ry, rx));
     }
 
     static SCALE(x, y, z) {
@@ -216,7 +225,7 @@ export class Mat4 {
         let c = new Mat4();
         for(let iy = 0; iy < 4; iy++) {
             for(let ix = 0; ix < 4; ix++) {
-                res[iy][ix] = 
+                c.m[iy][ix] = 
                     a.m[iy][0] * b.m[0][ix] +
                     a.m[iy][1] * b.m[1][ix] +
                     a.m[iy][2] * b.m[2][ix] +
@@ -224,7 +233,7 @@ export class Mat4 {
             }
         }
 
-        return res;
+        return c;
     }
 
     transform(v) {

@@ -2,6 +2,11 @@
 
 import {VGAPalette, ShiftTable, PaletteShiftRight, PaletteSet} from './palette';
 import {Vec4, Mat4, ToRadians} from "./math";
+import Vertex from "./vertex";
+import Edge from "./edge";
+import Renderer from "./render.js";
+import Lerp from "./lerper";
+
 class Vec2 {
     constructor(x, y) {
         this.x = x;
@@ -16,62 +21,35 @@ let Game = {
     renderResolution: new Vec2(320,200)
 };
 
-class G_Stars3D  {
-    constructor(numstars, spread, speed) {
-        this.numstars = numstars;
-        this.spread = spread;
-        this.speed = speed;
-        this.stardata = [];
-        for(let i = 0; i < numstars; i++) {
-            this.initStar(i);
-        }
-        
-        this.projection = Mat4.PERSPECTIVE(ToRadians(60.0), Game.renderResolution.x / Game.renderResolution.y, 0.1, 1000.0);
-    }
-
-    initStar(index) {
-        this.stardata[index] = new Vec4(
-            2 * (Math.random() - 0.5) * this.spread,
-            2 * (Math.random() - 0.5) * this.spread,
-            (Math.random() - 0.00001) * this.spread,
-            1.0
-        );
-    }
-
-    render(delta, drawpixel) {
-        
-        for(let i = 0; i < this.stardata.length; i++) {
-            this.stardata[i].z -= this.speed * delta;
-
-            if(this.stardata[i].z <= 0) {
-                this.initStar(i);
-            }
-
-            let hw = Game.renderResolution.x / 2;
-            let hh = Game.renderResolution.y / 2;
-            //let x = Math.floor((this.stardata[i].x / this.stardata[i].z) * hw + hw);
-            //let y = Math.floor((this.stardata[i].y / this.stardata[i].z) * hh + hh);
-            let tv = this.projection.transform(this.stardata[i]);
-            let x = Math.ceil(tv.x);
-            let y = Math.ceil(tv.y);
-            let screen = Mat4.SCREEN_SPACE_TRANSFORM(Game.renderResolution.width, Game.renderResolution.height);
-            let v = new Vec4(this.stardata[i].x, this.stardata[i].z, this.stardata[i].z, this.stardata[i].z);
-            v = screen.transform(new Vec4(v.x / v.w, v.y / v.w, v.z / v.w, v.w));
-
-            if(x < 0 || x > Game.renderResolution.x-1 || y < 0 || y > Game.renderResolution.y-1) {
-                this.initStar(i);
-            } else {
-                let dist = Math.floor((100.0) * this.stardata[i].z) % 64;
-                
-                drawpixel(v.x, v.y, 192+(64-dist));
-            }
-        }
-    }
-}
-
 Game.canvas = document.getElementById("RenderCanvas");
 Game.canvas.width = Game.resolution.x;
 Game.canvas.height = Game.resolution.y;
+
+// Temporary image loading
+// Going to need to load the entire set of data
+// BEFORE running the game's update loop for the first time.
+// Will need asset management for that.
+
+let i = new Image();
+let img_wal_001 = null;
+i.ready = false;
+i.crossOrigin = "anonymous";
+i.onload = () => {
+    i.ready = true;
+    // Convert to canvas to image
+    let c = document.createElement('canvas');
+    c.width = i.width;
+    c.height = i.height;
+    let c_ctx = c.getContext('2d');
+    c_ctx.fillStyle = "black";
+    c_ctx.clearRect(0, 0, c.width, c.height);
+    c_ctx.drawImage(i, 0, 0);
+    img_wal_001 = c_ctx.getImageData(0, 0, c.width, c.height);
+    console.dir(img_wal_001);
+
+    update(Date.now());
+};
+i.src = "/wal_001.png";
 
 // Scale up to window extents if possible
 let scale = 1;
@@ -105,7 +83,7 @@ Game.context.fillStyle = "#FF00FF";
 Game.context.fillRect(0,0,Game.canvas.width, Game.canvas.height);
 
 // ImageData render
-let renderBuffer = new Uint8ClampedArray(Game.renderResolution.x * Game.renderResolution.y);
+let renderBuffer = new Uint8ClampedArray(Game.renderResolution.x * Game.renderResolution.y * 4);
 
 let renderImage = new ImageData(Game.renderResolution.x, Game.renderResolution.y);
 
@@ -119,15 +97,15 @@ for(let i = 0; i < Game.renderResolution.x * Game.renderResolution.y; i+=4) {
 function CopyBuffer() {
     for(let iy = 0; iy < Game.renderResolution.y; iy++) {
         for(let ix = 0; ix < Game.renderResolution.x; ix++) {
-            let idex = iy * (Game.renderResolution.x) + ix;
+            let idex = (iy * (Game.renderResolution.x * 4) + (ix*4));
             let idex2 = iy * (Game.renderResolution.x*4) + (ix*4);
             let col = renderBuffer[idex];
-            let shiftcol = ShiftTable[col%256] ? ShiftTable[col%256] + col%256 : col%256;
-            let rgbcol = VGAPalette[shiftcol%256];
-            renderImage.data[idex2] = rgbcol.r;
-            renderImage.data[idex2+1] = rgbcol.g;
-            renderImage.data[idex2+2] = rgbcol.b;
-            renderImage.data[idex2+3] = 255;
+            //let shiftcol = ShiftTable[col%256] ? ShiftTable[col%256] + col%256 : col%256;
+            //let rgbcol = VGAPalette[shiftcol%256];
+            renderImage.data[idex2] = renderBuffer[idex];
+            renderImage.data[idex2+1] = renderBuffer[idex+1];
+            renderImage.data[idex2+2] = renderBuffer[idex+2];
+            renderImage.data[idex2+3] = renderBuffer[idex+3];
         }
     }
 }
@@ -140,8 +118,12 @@ for(let i = 0; i < 64; i++) {
     PaletteSet(i+194, i*4, i*4, i*4);
 }
 
-function drawPixel(x, y, col) {
-    renderBuffer[y * Game.renderResolution.x + x] = col;
+function drawPixel(x, y, r, g, b, a) {
+    let idex = (y * (Game.renderResolution.x * 4) + (x * 4));
+    renderBuffer[idex] = r;
+    renderBuffer[idex + 1] = g;
+    renderBuffer[idex + 2] = b;
+    renderBuffer[idex + 3] = a;
     /*let idex = y * (Game.renderResolution.x*4) + (x*4);
     let shiftcol = ShiftTable[col%256] ? ShiftTable[col%256] + col%256 : col%256;
     let rgbcol = VGAPalette[shiftcol%256];
@@ -194,9 +176,18 @@ for(let i = 0; i < 5; i++) {
 let lastTime = Date.now();
 let deltaTime = 0;
 
-let myStarField = new G_Stars3D(256, 64.0, 20.0);
+let ren = new Renderer(drawPixel, Game.renderResolution.x, Game.renderResolution.y);
+ren.wireframe = false;
+let verts = [
+    new Vertex().set(new Vec4(0.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(0.5, 0.0, 0.0, 0.0)),
+    new Vertex().set(new Vec4(-1.0, -1.0, 0.0, 1.0), new Vec4(1.0, 1.0,1.0, 1.0), new Vec4(0.0, 1.0, 0.0, 0.0)),
+    new Vertex().set(new Vec4(1.0, -1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(1.0, 1.0, 0.0, 0.0)),
+    new Vertex().set(new Vec4(1.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(1.0, 0.0, 0.0, 0.0)),
+    new Vertex().set(new Vec4(-1.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(0.0, 0.0, 0.0, 0.0))
+];
 
-
+let projection = Mat4.PERSPECTIVE(ToRadians(70.0), Game.renderResolution.x / Game.renderResolution.y, 0.1, 1000.0);
+let rotcounter = 0.0;
 
 function update(tick) {
     let currentTime = Date.now();
@@ -207,26 +198,17 @@ function update(tick) {
         renderBuffer[i] = 0;
     }
 
-    /*
-    for(let iy = 0; iy < Game.renderResolution.y; iy++) {
-        for(let ix = 0; ix < Game.renderResolution.x; ix++) {
-            let col = Math.round((ix + iy)/2);
-            col = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5);
-            //let idex = (iy%64)*64+(ix%64);
-            //col = myTestPattern[idex];
-            drawPixel(ix, iy, col % 256);
-        }
-    }   
+    rotcounter += deltaTime;
+
+
+    let translation = Mat4.TRANSLATE(0.0, 0.0, 3.0 + (0.1 * Math.sin(rotcounter)));
+    let rotation = Mat4.ROTATION(0.0, rotcounter, 0.0);
+    let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
     
-    for(let i = 0; i < 256; i++) {
-        PaletteShiftRight(i, 1, 256);
-    }*/
-    
-    myStarField.render(deltaTime, drawPixel);
-    
-    coloffset++;
-    coloffset = coloffset % 256;
-    pix.x += 1;
+    ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[2].transform(transform), img_wal_001);
+    ren.fill_tri(verts[0].transform(transform), verts[2].transform(transform), verts[3].transform(transform), img_wal_001);
+    ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[4].transform(transform), img_wal_001);
+
     CopyBuffer();
     Game.context.putImageData(renderImage, 0, 0);
 
@@ -234,7 +216,3 @@ function update(tick) {
 
     requestAnimationFrame(update);
 }
-
-
-
-update(Date.now());
