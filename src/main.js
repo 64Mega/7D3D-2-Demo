@@ -143,10 +143,13 @@ for(let i = 0; i < 256; i++) {
     ShiftTable[i] = 0;
 }
 
-let myTestPattern = new Uint8ClampedArray(64*64);
+let myTestPattern = new Uint8ClampedArray(64*64*4);
 for(let iy = 0; iy < 64; iy++) {
     for(let ix = 0; ix < 64; ix++) {
-        myTestPattern[iy*64+ix] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 256) % 64;
+        myTestPattern[iy*256+(ix*4)] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 256) % 256;
+        myTestPattern[iy*256+(ix*4) + 1] = Math.floor(((ix ^ iy) * 1.175 * 1.125) * 1.5 + 128) % 256;
+        myTestPattern[iy*256+(ix*4) + 2] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 64) % 256;
+        myTestPattern[iy*256+(ix*4) + 3] = 255;
     }
 }
 
@@ -204,10 +207,14 @@ function update(tick) {
     let translation = Mat4.TRANSLATE(0.0, 0.0, 3.0 + (0.1 * Math.sin(rotcounter)));
     let rotation = Mat4.ROTATION(0.0, rotcounter, 0.0);
     let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
-    
+    let fakeimg = {
+        data: myTestPattern,
+        width: 64,
+        height: 64
+    };
     ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[2].transform(transform), img_wal_001);
-    ren.fill_tri(verts[0].transform(transform), verts[2].transform(transform), verts[3].transform(transform), img_wal_001);
-    ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[4].transform(transform), img_wal_001);
+    //ren.fill_tri(verts[0].transform(transform), verts[2].transform(transform), verts[3].transform(transform), img_wal_001);
+    //ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[4].transform(transform), img_wal_001);
 
     CopyBuffer();
     Game.context.putImageData(renderImage, 0, 0);

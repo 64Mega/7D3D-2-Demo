@@ -27,6 +27,13 @@ export default class Edge {
         this.texcoord_y = inter.texcoord_y[top] + inter.texcoord_yx_step * x_prestep + inter.texcoord_yy_step * y_prestep;
         this.texcoord_step_x = inter.texcoord_xy_step + inter.texcoord_xx_step * this.x_step;
         this.texcoord_step_y = inter.texcoord_yy_step + inter.texcoord_yx_step * this.x_step;
+
+        // Perspective interpolation
+        this.one_over_z = inter.one_over_z[top] +
+            inter.one_over_zx_step * x_prestep +
+            inter.one_over_zy_step * y_prestep;
+
+        this.one_over_z_step = inter.one_over_zy_step + inter.one_over_zx_step * this.x_step;
     }
 
     step() {
@@ -35,5 +42,6 @@ export default class Edge {
         this.color = this.color.add(this.color_step);
         this.texcoord_x += this.texcoord_step_x;
         this.texcoord_y += this.texcoord_step_y;
+        this.one_over_z += this.one_over_z_step;
     }
 }
