@@ -34,6 +34,12 @@ export default class Edge {
             inter.one_over_zy_step * y_prestep;
 
         this.one_over_z_step = inter.one_over_zy_step + inter.one_over_zx_step * this.x_step;
+
+        this.depth = inter.depth[top] + 
+            inter.depth_x_step * x_prestep +
+            inter.depth_y_step * y_prestep;
+
+        this.depth_step = inter.depth_y_step + inter.depth_x_step * this.x_step;
     }
 
     step() {
@@ -43,5 +49,6 @@ export default class Edge {
         this.texcoord_x += this.texcoord_step_x;
         this.texcoord_y += this.texcoord_step_y;
         this.one_over_z += this.one_over_z_step;
+        this.depth += this.depth_step;
     }
 }

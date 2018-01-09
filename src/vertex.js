@@ -31,11 +31,36 @@ export default class Vertex {
         );
     }
 
+    lerp(vert_other, t) {
+        return new Vertex().set(
+            Vec4.lerp(this.pos, vert_other.pos, t),
+            Vec4.lerp(this.color, vert_other.color, t),
+            Vec4.lerp(this.texcoords, vert_other.texcoords, t)
+        );
+    }
+
     triangle2a(b, c) {
         let x1 = b.pos.x - this.pos.x;
         let y1 = b.pos.y - this.pos.y;
         let x2 = c.pos.x - this.pos.x;
         let y2 = c.pos.y - this.pos.y;
         return (x1 * y2 - x2 * y1);
+    }
+
+    inside_view() {
+        return Math.abs(this.pos.x) <= Math.abs(this.pos.w) &&
+                Math.abs(this.pos.y) <= Math.abs(this.pos.w) &&
+                Math.abs(this.pos.z) <= Math.abs(this.pos.w);
+    }
+
+    get_index(i) {
+        switch(i) {
+            case 0: return this.pos.x;
+            case 1: return this.pos.y;
+            case 2: return this.pos.z;
+            case 3: return this.pos.w;
+        }
+
+        return 0;
     }
 }

@@ -6,6 +6,8 @@ import Vertex from "./vertex";
 import Edge from "./edge";
 import Renderer from "./render.js";
 import Lerp from "./lerper";
+import {Mesh} from "./mesh";
+import {map_01, map_0} from "./maps/map01";
 
 class Vec2 {
     constructor(x, y) {
@@ -120,6 +122,7 @@ for(let i = 0; i < 64; i++) {
 
 function drawPixel(x, y, r, g, b, a) {
     let idex = (y * (Game.renderResolution.x * 4) + (x * 4));
+    if(x < 0 || x > Game.renderResolution.x - 1 || y < 0 || y > Game.renderResolution.y - 1) { return; }
     renderBuffer[idex] = r;
     renderBuffer[idex + 1] = g;
     renderBuffer[idex + 2] = b;
@@ -143,13 +146,30 @@ for(let i = 0; i < 256; i++) {
     ShiftTable[i] = 0;
 }
 
-let myTestPattern = new Uint8ClampedArray(64*64*4);
-for(let iy = 0; iy < 64; iy++) {
-    for(let ix = 0; ix < 64; ix++) {
-        myTestPattern[iy*256+(ix*4)] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 256) % 256;
-        myTestPattern[iy*256+(ix*4) + 1] = Math.floor(((ix ^ iy) * 1.175 * 1.125) * 1.5 + 128) % 256;
-        myTestPattern[iy*256+(ix*4) + 2] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 64) % 256;
-        myTestPattern[iy*256+(ix*4) + 3] = 255;
+let ptn1 = new Uint8ClampedArray(32*32*4);
+for(let iy = 0; iy < 32; iy++) {
+    for(let ix = 0; ix < 32; ix++) {
+        let idex = iy * (32*4) + (ix * 4);
+        ptn1[idex] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 256) % 256;
+        ptn1[idex + 1] = Math.floor(((ix ^ iy) * 1.175 * 1.125) * 0.5 + 128) % 256;
+        ptn1[idex + 2] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 64) % 256;
+        ptn1[idex + 3] = 255;
+
+        //myTestPattern[iy*128+(ix*4)] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 256) % 256;
+        //myTestPattern[iy*128+(ix*4) + 1] = Math.floor(((ix ^ iy) * 1.175 * 1.125) * 1.5 + 128) % 256;
+        //myTestPattern[iy*128+(ix*4) + 2] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 64) % 256;
+        //myTestPattern[iy*128+(ix*4) + 3] = 255;
+    }
+}
+
+let ptn2 = new Uint8ClampedArray(32*32*4);
+for(let iy = 0; iy < 32; iy++) {
+    for(let ix = 0; ix < 32; ix++) {
+        let idex = iy * (32*4) + (ix * 4);
+        ptn2[idex] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 16) % 256;
+        ptn2[idex + 1] = Math.floor(((ix ^ iy) * 1.175 * 1.125) * 0.5 + 16) % 256;
+        ptn2[idex + 2] = Math.floor(((ix ^ iy) * 0.875 * 1.125) * 0.5 + 200) % 256;
+        ptn2[idex + 3] = 255;
     }
 }
 
@@ -181,42 +201,193 @@ let deltaTime = 0;
 
 let ren = new Renderer(drawPixel, Game.renderResolution.x, Game.renderResolution.y);
 ren.wireframe = false;
-let verts = [
-    new Vertex().set(new Vec4(0.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(0.5, 0.0, 0.0, 0.0)),
-    new Vertex().set(new Vec4(-1.0, -1.0, 0.0, 1.0), new Vec4(1.0, 1.0,1.0, 1.0), new Vec4(0.0, 1.0, 0.0, 0.0)),
-    new Vertex().set(new Vec4(1.0, -1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(1.0, 1.0, 0.0, 0.0)),
-    new Vertex().set(new Vec4(1.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(1.0, 0.0, 0.0, 0.0)),
-    new Vertex().set(new Vec4(-1.0, 1.0, 0.0, 1.0), new Vec4(1.0, 1.0, 1.0, 1.0), new Vec4(0.0, 0.0, 0.0, 0.0))
+
+let m_verts = [
+    -1.0, 1.50, -1.0,     1.0, 1.50, -1.0,     1.0, -1.50, -1.0,   -1.0, -1.50, -1.0, // front face
+    1.0, 1.50, 1.0,      -1.0, 1.50, 1.0,     -1.0, -1.50, 1.0,     1.0, -1.50, 1.0, // back face
+    -1.0, 1.50, 1.0,     -1.0, 1.50, -1.0,    -1.0, -1.50, -1.0,   -1.0, -1.50, 1.0, // left face
+    1.0, 1.50, -1.0,      1.0, 1.50, 1.0,      1.0, -1.50, 1.0,     1.0, -1.50, -1.0, // right face
+    -1.0, 1.50, 1.0,      1.0, 1.50, 1.0,      1.0, 1.50, -1.0,    -1.0, 1.50, -1.0, // top face
+    1.0, -1.50, 1.0,     -1.0, -1.50, 1.0,    -1.0, -1.50, -1.0,    1.0, -1.50, -1.0, // bottom face
 ];
 
-let projection = Mat4.PERSPECTIVE(ToRadians(70.0), Game.renderResolution.x / Game.renderResolution.y, 0.1, 1000.0);
+let m_colors = [
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,
+];
+
+let m_texco = [
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 1.0, 0.0,  0.0, 1.0, 0.0,
+];
+
+let m_indices = [
+    0, 2, 1,  0, 3, 2,  
+    4, 6, 5,  4, 7, 6,
+    8, 10, 9,  8, 11, 10, 
+    12, 14, 13,  12, 15, 14,
+    16, 18, 17,  16, 19, 18,
+    20, 22, 21,  20, 23, 22
+];
+
+let f_indices = [
+    16, 18, 17,  16, 19, 18
+];
+
+let c_indices = [
+    17, 18, 16,  18, 19, 16
+];
+
+let myMesh = new Mesh(m_verts, m_colors, m_texco, m_indices);
+let mesh_floor = new Mesh(m_verts, m_colors, m_texco, f_indices);
+let mesh_ceil = new Mesh(m_verts, m_colors, m_texco, c_indices);
+
+let projection = Mat4.PERSPECTIVE(ToRadians(60.0), Game.renderResolution.x / Game.renderResolution.y, 0.1, 1000.0);
 let rotcounter = 0.0;
+
+let img_pattern1 = {
+    data: ptn1,
+    width: 32,
+    height: 32
+};
+
+let img_pattern2 = {
+    data: ptn2,
+    width: 32,
+    height: 32
+};
+
+
+let camera = {
+    camtransform: Mat4.IDENTITY,
+    pos: new Vec4(27, 0, 23, 0),
+    rot: new Vec4(0, 0, 0, 0)
+};
+
+function draw_wall(x, y, z, tex, cam) {
+    let translation = Mat4.TRANSLATE(x, y, z);
+    let rotation = Mat4.IDENTITY();
+    let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
+    if(cam) { 
+        //let n_trans = Mat4.mul(translation, cam.cam_pos);
+        //let n_rot = Mat4.mul(rotation, cam.cam_rot);
+        transform = Mat4.mul(projection, 
+            Mat4.mul(cam.cam_rot,
+            Mat4.mul(cam.cam_pos, Mat4.mul(translation, rotation))));
+    }
+
+    
+    
+    ren.draw_mesh(myMesh, transform, tex);
+}
+
+function draw_floor(x, y, z, tex, cam) {
+    let translation = Mat4.TRANSLATE(x, y, z);
+    let rotation = Mat4.IDENTITY();
+    let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
+    if(cam) { 
+        //let n_trans = Mat4.mul(translation, cam.cam_pos);
+        //let n_rot = Mat4.mul(rotation, cam.cam_rot);
+        transform = Mat4.mul(projection, 
+            Mat4.mul(cam.cam_rot,
+            Mat4.mul(cam.cam_pos, Mat4.mul(translation, rotation))));
+    }
+
+    ren.draw_mesh(mesh_floor, transform, tex);
+}
+
+function draw_ceil(x, y, z, tex, cam) {
+    let translation = Mat4.TRANSLATE(x, y, z);
+    let rotation = Mat4.IDENTITY();
+    let transform = Mat4.mul(projection, translation);
+    if(cam) { 
+        // let n_trans = Mat4.mul(translation, cam.cam_pos);
+        //let n_rot = Mat4.mul(rotation, cam.cam_rot);
+        transform = Mat4.mul(projection, 
+            Mat4.mul(cam.cam_rot,
+            Mat4.mul(cam.cam_pos, Mat4.mul(translation, rotation))));
+    }
+
+    ren.draw_mesh(mesh_ceil, transform, tex);
+}
+
+const RENDER_DISTANCE = 12;
 
 function update(tick) {
     let currentTime = Date.now();
     deltaTime = (currentTime - lastTime) / 1000;
 
     // Clear buffer
-    for(let i = 0; i < renderBuffer.length; i++) {
+    for(let i = 0; i < renderBuffer.length; i+=4) {
         renderBuffer[i] = 0;
+        renderBuffer[i+1] = 0;
+        renderBuffer[i+2] = 0;
+        renderBuffer[i+3] = 255;
     }
 
-    rotcounter += deltaTime;
+    // Clear depth buffer
+    ren.clear_zbuffer();
+
+    rotcounter += deltaTime * 0.5;
 
 
-    let translation = Mat4.TRANSLATE(0.0, 0.0, 3.0 + (0.1 * Math.sin(rotcounter)));
-    let rotation = Mat4.ROTATION(0.0, rotcounter, 0.0);
-    let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
-    let fakeimg = {
-        data: myTestPattern,
-        width: 64,
-        height: 64
-    };
-    ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[2].transform(transform), img_wal_001);
-    //ren.fill_tri(verts[0].transform(transform), verts[2].transform(transform), verts[3].transform(transform), img_wal_001);
-    //ren.fill_tri(verts[0].transform(transform), verts[1].transform(transform), verts[4].transform(transform), img_wal_001);
+    //let translation = Mat4.TRANSLATE(0.0, 0.0, 2);
+    //let rotation = Mat4.ROTATION(0.0, rotcounter, 0.0);
+    //let transform = Mat4.mul(projection, Mat4.mul(translation, rotation));
+    
+    //ren.draw_mesh(myMesh, transform, fakeimg);
+
+    let cam_pos = Mat4.TRANSLATE(camera.pos.x*2, 0, -camera.pos.z*2);
+    let cam_rot = Mat4.ROTATION(0, rotcounter, 0);
+    let cam = {cam_pos, cam_rot};
+
+    let cam_x = Math.floor(camera.pos.x);
+    let cam_y = Math.floor(camera.pos.z);
+    let sx = cam_x - RENDER_DISTANCE < 0 ? 0 : cam_x - RENDER_DISTANCE;
+    let sy = cam_y - RENDER_DISTANCE < 0 ? 0 : cam_y - RENDER_DISTANCE;
+    let ex = cam_x + RENDER_DISTANCE > map_0.width - 1 ? map_0.width - 1 : cam_x + RENDER_DISTANCE;
+    let ey = cam_y + RENDER_DISTANCE > map_0.height - 1 ? map_0.height - 1 : cam_y + RENDER_DISTANCE;
+    
+    for(let iy = sy; iy < ey; iy++) {
+        for(let ix = sx; ix < ex; ix++) {
+            let idex = iy * map_0.width + ix;
+            let t = map_0.layers[0].data[idex];
+            if(t === 0) {
+                draw_floor(-ix*2, -3, iy*2, img_pattern1, cam);
+                draw_ceil(-ix*2, 0, iy*2, img_pattern2, cam);
+            } else {
+                draw_wall(-ix*2, 0, iy*2, img_wal_001, cam);
+            }
+        }
+    }
+
+    /*
+    for(let iy = 0; iy < map_0.height; iy++) {
+        for(let ix = 0; ix < map_0.width; ix++) {
+            let idex = (iy) * map_0.width + ix;
+            let t = map_0.layers[0].data[idex];
+            if(t === 0) {
+                draw_floor(-ix*2, -3, iy*2, fakeimg, cam);
+                draw_ceil(-ix*2, 0, iy*2, fakeimg, cam);
+            }
+            else {
+                draw_wall(-ix*2, 0, iy*2, img_wal_001, cam);
+            }
+        }
+    }
+    */
 
     CopyBuffer();
+    Game.context.fillStyle = "black";
+    Game.context.fillRect(0, 0, Game.renderResolution.x, Game.renderResolution.y);
     Game.context.putImageData(renderImage, 0, 0);
 
     lastTime = currentTime;

@@ -41,6 +41,15 @@ class Lerp {
         this.one_over_z[1] = 1.0 / v2.pos.w;
         this.one_over_z[2] = 1.0 / v3.pos.w;
 
+        this.depth = [
+            v1.pos.z,
+            v2.pos.z,
+            v3.pos.z
+        ];
+
+        this.depth_x_step = calcstep_x(this.depth, v1, v2, v3, odx);
+        this.depth_y_step = calcstep_y(this.depth, v1, v2, v3, ody);
+
         // Holy function call hell. I need some operator overloading over here.
         // I blew it up a bit so I could read it, but still... whew. Don't code past midnight kids.
         

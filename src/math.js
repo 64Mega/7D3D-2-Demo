@@ -61,9 +61,7 @@ export class Vec4 {
     }
 
     static lerp(a, b, t) {
-        let r = Vec4.subv(b, a);
-        r = Vec4.muls(r, muls);
-        r = Vec4.addv(a);
+        let r = b.sub(a).mul(t).add(a);
         return r;
     }
 }
@@ -103,8 +101,8 @@ export class Mat4 {
         let hh = view_height / 2.0;
 
         let m = [
-            [ hw,       0.0,        0.0,         hw],
-            [0.0,       -hh,        0.0,         hh],
+            [ hw,       0.0,        0.0,         hw - 0.5],
+            [0.0,       -hh,        0.0,         hh - 0.5],
             [0.0,       0.0,        1.0,        0.0],
             [0.0,       0.0,        0.0,        1.0],
         ];
