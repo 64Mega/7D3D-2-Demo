@@ -89,7 +89,7 @@ add_entity_type("Ball",
     },
     () => {},
     (self, cam) => {
-        draw_bbsprite(-self.pos.x*2, -0.5, self.pos.z*2, getImage("/testball.png").data, cam);
+        draw_bbsprite(-self.pos.x*2, -0.5, self.pos.z*2, getImage("./testball.png").data, cam);
     },
     (self, player) => {
         player.en += 5;
@@ -113,7 +113,7 @@ add_entity_type("Keycard",
         self.y_offset = Math.sin(self.counter) * 0.25;
     },
     (self, cam) => { // render
-        let keystr = `/keycard${self.data.keynum}.png`;
+        let keystr = `./keycard${self.data.keynum}.png`;
         
         draw_bbsprite(-self.pos.x*2, -0.5 + self.y_offset, self.pos.z*2, getImage(keystr).data, cam);
     },
@@ -234,9 +234,9 @@ add_entity_type("DoorNarrow",
     // Render
     (self, cam) => {
         let horizontal = self.data.horizontal;
-        let astr = "/door_static.png";
+        let astr = "./door_static.png";
         if(self.data.locked !== 0) {
-            astr = `/door_locked${self.data.locked}.png`;
+            astr = `./door_locked${self.data.locked}.png`;
         }
 
         if(horizontal === true) {
@@ -348,7 +348,7 @@ function getImage(image) {
 // Scale up to window extents if possible
 let scale = 1;
 if(Game.canvas.width > Game.canvas.height) {
-    scale = Math.floor((window.innerWidth-32) / Game.canvas.width)-1;
+    scale = Math.floor((window.innerWidth-32) / Game.canvas.width);
     Game.canvas.style = `
         width: ${Game.canvas.width*scale}px; 
         position: absolute; 
@@ -359,7 +359,7 @@ if(Game.canvas.width > Game.canvas.height) {
         image-rendering: crisp-edges;
         image-rendering: pixelated;`;
 } else {
-    scale = Math.floor((window.innerHeight-32) / Game.canvas.height)-1;
+    scale = Math.floor((window.innerHeight-32) / Game.canvas.height);
     Game.canvas.style = `
         height: ${Game.canvas.height*scale}px; 
         position: absolute; 
@@ -770,13 +770,13 @@ function draw_sprite(spr, x, y, w, h) {
 // #endregion
 
 const FONT_MINI = {
-    file: "/spr_font1.png",
+    file: "./spr_font1.png",
     gwidth: 5,
     gheight: 8,
 };
 
 const FONT_MAIN = {
-    file: "/font_main.png",
+    file: "./font_main.png",
     gwidth: 8,
     gheight: 8
 }
@@ -792,43 +792,43 @@ function draw_text(x, y, text, font) {
 //#region image loading
 // Load some images
 loadImages([
-    "/wal_001.png",
-    "/hud_bg.png",
-    "/crosshair.png",
-    "/testball.png",
-    "/spr_font1.png",
-    "/font_main.png",
-    "/wal_0.png",
-    "/wal_1.png",
-    "/wal_2.png",
-    "/wal_3.png",
-    "/wal_4.png",
-    "/wal_5.png",
-    "/wal_6.png",
-    "/wal_7.png",
-    "/wal_8.png",
-    "/bg_city.png",
-    "/gun_1.png",
-    "/blaster_shot_static.png",
-    "/blast_shot_anim.png",
-    "/door_static.png",
-    "/door_locked1.png",
-    "/door_locked2.png",
-    "/door_locked3.png",
-    "/door_locked4.png",
-    "/keycard_icon1.png",
-    "/keycard_icon2.png",
-    "/keycard_icon3.png",
-    "/keycard_icon4.png",
-    "/keycard1.png",
-    "/keycard2.png",
-    "/keycard3.png",
-    "/keycard4.png",
+    "./wal_001.png",
+    "./hud_bg.png",
+    "./crosshair.png",
+    "./testball.png",
+    "./spr_font1.png",
+    "./font_main.png",
+    "./wal_0.png",
+    "./wal_1.png",
+    "./wal_2.png",
+    "./wal_3.png",
+    "./wal_4.png",
+    "./wal_5.png",
+    "./wal_6.png",
+    "./wal_7.png",
+    "./wal_8.png",
+    "./bg_city.png",
+    "./gun_1.png",
+    "./blaster_shot_static.png",
+    "./blast_shot_anim.png",
+    "./door_static.png",
+    "./door_locked1.png",
+    "./door_locked2.png",
+    "./door_locked3.png",
+    "./door_locked4.png",
+    "./keycard_icon1.png",
+    "./keycard_icon2.png",
+    "./keycard_icon3.png",
+    "./keycard_icon4.png",
+    "./keycard1.png",
+    "./keycard2.png",
+    "./keycard3.png",
+    "./keycard4.png",
 
     // Animation: Blaster shot
-    "/anims/blaster_shot/1.png",
-    "/anims/blaster_shot/2.png",
-    "/anims/blaster_shot/3.png",
+    "./anims/blaster_shot/1.png",
+    "./anims/blaster_shot/2.png",
+    "./anims/blaster_shot/3.png",
 ]);
 //#endregion
 
@@ -836,15 +836,15 @@ loadImages([
 const anims = {};
 function load_anims() {
     anims["blaster_shot"] = createAnimTex("", [
-        getImage("/anims/blaster_shot/1.png"),
-        getImage("/anims/blaster_shot/2.png"),
-        getImage("/anims/blaster_shot/3.png")
+        getImage("./anims/blaster_shot/1.png"),
+        getImage("./anims/blaster_shot/2.png"),
+        getImage("./anims/blaster_shot/3.png")
     ]);
 }
 //#endregion
 
 function getWalTexture(num) {
-    return getImage(`/wal_${num}.png`);
+    return getImage(`./wal_${num}.png`);
 }
 
 function move_camera(cam, movestrength) {
@@ -1009,7 +1009,7 @@ function update(tick) {
     // Draw static background
     let bg_xoffset = Math.floor(((ToDegrees(camera.rot.y) % 360) * (1 / 360)) * 1280) % 960;
     
-    draw_sprite_part(getImage("/bg_city.png"), bg_xoffset, 0, 320, 200, 0, 0);
+    draw_sprite_part(getImage("./bg_city.png"), bg_xoffset, 0, 320, 200, 0, 0);
 
     // Draw map
 
@@ -1047,7 +1047,7 @@ function update(tick) {
         if(kp_shoot === false) {
             spawn_entity("PlayerProjectile", camera.pos, {
                 dir: new Vec4(cam.cam_rot.m[0][2], cam.cam_rot.m[1][2], cam.cam_rot.m[2][2], 1.0),
-                sprite: getImage("/blaster_shot_static.png").data,
+                sprite: getImage("./blaster_shot_static.png").data,
                 speed: 8.0
             });
             kp_shoot = true;
@@ -1087,11 +1087,11 @@ function update(tick) {
 
     // Draw VWEP
     let gunbob = Math.floor(Math.sin(movebob_counter) * 4);
-    draw_sprite(getImage("/gun_1.png"), 160-(Math.floor(gunbob/2)), 110+gunbob, 64, 75);
+    draw_sprite(getImage("./gun_1.png"), 160-(Math.floor(gunbob/2)), 110+gunbob, 64, 75);
 
     // Draw HUD
-    draw_sprite(getImage("/hud_bg.png"), 0, 168, 320, 32);
-    draw_sprite(getImage("/crosshair.png"), 152, 96, 16, 16);
+    draw_sprite(getImage("./hud_bg.png"), 0, 168, 320, 32);
+    draw_sprite(getImage("./crosshair.png"), 152, 96, 16, 16);
 
     // Drawing some text
     draw_text(4,188,player.hp.toString(), FONT_MAIN);
@@ -1109,10 +1109,10 @@ function update(tick) {
     draw_text(64, 188, ammostr, FONT_MAIN);
 
     // Drawing keycards
-    player.keys.red && draw_sprite(getImage("/keycard_icon1.png"), 297, 177, 8, 8);
-    player.keys.blue && draw_sprite(getImage("/keycard_icon2.png"), 306, 177, 8, 8);
-    player.keys.green && draw_sprite(getImage("/keycard_icon3.png"), 297, 186, 8, 8);
-    player.keys.yellow && draw_sprite(getImage("/keycard_icon4.png"), 306, 186, 8, 8);
+    player.keys.red && draw_sprite(getImage("./keycard_icon1.png"), 297, 177, 8, 8);
+    player.keys.blue && draw_sprite(getImage("./keycard_icon2.png"), 306, 177, 8, 8);
+    player.keys.green && draw_sprite(getImage("./keycard_icon3.png"), 297, 186, 8, 8);
+    player.keys.yellow && draw_sprite(getImage("./keycard_icon4.png"), 306, 186, 8, 8);
 
     CopyBuffer();
     Game.context.fillStyle = "black";

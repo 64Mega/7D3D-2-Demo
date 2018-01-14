@@ -6,12 +6,12 @@ export default class Input {
         this.canvas = document.getElementById("RenderCanvas");
         this.isLocked = false;
         this.canvas.addEventListener('click', (ev) => {
-            //if(this.isLocked === false) { this.canvas.requestPointerLock(); }
+            if(this.isLocked === false) { this.canvas.requestPointerLock(); }
             ev.preventDefault();
         }, false);
 
         document.addEventListener('pointerlockchange', (ev) => {
-            //this.isLocked = !this.isLocked;
+            this.isLocked = !this.isLocked;
             //console.log("Cursor Lock changed to " + this.isLocked);
         }, false);
 
@@ -22,6 +22,9 @@ export default class Input {
 
         document.addEventListener("keydown", (ev) => {
             this.keys[ev.keyCode] = 1;
+            if(this.isLocked) {
+                ev.preventDefault();
+            }
             //console.log("Pressed " + ev.keyCode);
         });
 
