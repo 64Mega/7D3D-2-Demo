@@ -5,6 +5,10 @@ export function ToRadians(angle) {
     return (Math.PI / 180.0) * angle;
 }
 
+export function ToDegrees(radians) {
+    return (radians * 180.0) / Math.PI;
+}
+
 export class Vec4 {
     constructor(x, y, z, w) {
         this.x = x;
@@ -83,6 +87,16 @@ export class Mat4 {
         }
 
         this.m = m;
+    }
+
+    invert() {
+        let m = new Mat4(this.m);
+        for(let iy = 0; iy < 4; iy++) {
+            for(let ix = 0; ix < 4; ix++) {
+                m[iy * 4 + ix] = - m[iy * 4 + ix];
+            }
+        }
+        return m;
     }
 
     static IDENTITY() {

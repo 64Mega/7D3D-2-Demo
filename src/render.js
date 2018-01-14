@@ -7,9 +7,10 @@ import {Mesh} from "./mesh";
 // --
 
 class Renderer {
-    constructor(drawPixel, w, h) {
+    constructor(drawPixel, w, h, getPixel) {
         this.screen = {
             draw: drawPixel,
+            get: getPixel,
             w, h
         };
 
@@ -70,7 +71,7 @@ class Renderer {
         }
     }
 
-    draw_clipped_tri(v1, v2, v3, texture) {
+    draw_clipped_tri(v1, v2, v3, texture, bf) {
         let v1_inside = v1.inside_view();
         let v2_inside = v2.inside_view();
         let v3_inside = v3.inside_view();
@@ -95,29 +96,33 @@ class Renderer {
                 let rootvert = vertices[0];
 
                 for(let i = 1; i < vertices.length - 1; i++) {
-                    this.fill_tri(rootvert, vertices[i], vertices[i + 1], texture);
+                    this.fill_tri(rootvert, vertices[i], vertices[i + 1], texture, bf);
                 }
         }
     }
 
-    draw_mesh(mesh, transform, texture) {
+    draw_mesh(mesh, transform, texture, backface) {
+        let bf = false;
+        if(backface !== undefined) {
+            bf = backface;
+        }
         for(let i = 0; i < mesh.indices.length; i+=3) {
             this.draw_clipped_tri(
                 mesh.vertices[mesh.indices[i]].transform(transform),
                 mesh.vertices[mesh.indices[i+1]].transform(transform),
                 mesh.vertices[mesh.indices[i+2]].transform(transform),
-                texture
+                texture, bf
             );
         }
     }
 
-    fill_tri(vert1, vert2, vert3, texture) {
+    fill_tri(vert1, vert2, vert3, texture, bf) {
         let sst = Mat4.SCREEN_SPACE_TRANSFORM(this.screen.w, this.screen.h);
         let minv = vert1.transform(sst).perspective_divide();
         let midv = vert2.transform(sst).perspective_divide();
         let maxv = vert3.transform(sst).perspective_divide();
 
-        if(minv.triangle2a(midv, maxv) >= 0) {
+        if(minv.triangle2a(midv, maxv) >= 0 ) {
             return;
         }
 
@@ -155,6 +160,7 @@ class Renderer {
         let y_end = edge_b.y_end;
 
         for(let j = y_start; j < y_end; j++) {
+            if(j > this.screen.h - 32) { continue; }
             if(j >= 0 && j <= this.screen.h - 1) {
                 this.draw_scanline(lerps, left, right, j, texture);
             }
@@ -198,19 +204,30 @@ class Renderer {
             let r = Math.ceil(texture.data[srcidex] * col.x);
             let g = Math.ceil(texture.data[srcidex + 1] * col.y);
             let b = Math.ceil(texture.data[srcidex + 2] * col.z);
-            let a = Math.ceil(texture.data[srcidex + 3] * col.a);
+            let a = Math.ceil(texture.data[srcidex + 3] * col.w);
 
+            r = r < 0.0 ? 0.0 : r > 255 ? 255 : r;
+            g = g < 0.0 ? 0.0 : g > 255 ? 255 : g;
+            b = b < 0.0 ? 0.0 : b > 255 ? 255 : b;
+            a = a < 0.0 ? 0.0 : a > 255 ? 255 : a;
+            
             let idex = i + j * this.screen.w;
-            if(depth < this.zbuffer[idex] && i >= 0 && i <= this.screen.w - 1) {
+          
+            if(depth < this.zbuffer[idex] && i >= 0 && i <= this.screen.w - 1 && a === 255) {
                 this.zbuffer[idex] = depth;
-                let rdepth = 1.0 * (1/(depth*(z/2)));
+                
+                const fogfactor = 3.5 * (1/depth) * 0.99*1.1*depth; // I don't even remember writing this.
+                let rdepth = 1.0 * (fogfactor/(depth*(z)));
+                rdepth = rdepth < 0.0 ? 0.0 : rdepth > 1.0 ? 1.0 : rdepth;
                 if(this.wireframe === false) {
                     this.screen.draw(i, j, r * rdepth, g * rdepth, b * rdepth, 255);
                 } else {
                     if(i === x_min || i === x_max-1) {
                         this.screen.draw(i, j, r, g, b, 255);
                     }
+                
                 }
+                
             }
             col = col.add(lerps.color_xstep);
             //texco_x += lerps.texcoord_xx_step;
