@@ -94,7 +94,7 @@ add_entity_type("Ball",
     (self, player) => {
         player.en += 5;
         self.dead = true;
-        spawn_entity("Message", new Vec4(0,0,0,0), {message: "You picked up a potato."});
+        spawn_entity("Message", new Vec4(0,0,0,0), {message: "You got a thing. +5 EN"});
     },
     {foo: "This is a test"}
 );
